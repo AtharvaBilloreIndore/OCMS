@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 from OCMSdb import get_db
 from pydantic import BaseModel
 import OCMSmodels
+from OCMSmodels import Enrollment
 app = FastAPI()
 import os
 from dotenv import load_dotenv
-
+from datetime import datetime
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -30,9 +31,15 @@ class Instructor_Create(BaseModel):
     expertise:str
 
 class Student_Create(BaseModel):
+    student_id:int
     name:str
     education:str
     email:str
+    course_id:int
+
+class Enrollment_Create(BaseModel):
+    enrollment_id:int
+    enrollment_date:datetime
 
 @app.get("/OCMS/C")
 def get_course(db: Session = Depends(get_db)):
@@ -75,29 +82,28 @@ def create_instructor(instructor_data:Instructor_Create,db: Session = Depends(ge
     db.refresh(instructor)
     return instructor
 
-@app.post("/OCMS/S")
+@app.post("/OCMS/S", response_model=Enrollment_Create)
 def create_student(student_data:Student_Create,db: Session = Depends(get_db)):
-    student = OCMSmodels.Student(name=student_data.name,
+    student = OCMSmodels.Student(student_id=student_data.student_id,
+                                 name=student_data.name,
                                  education=student_data.education,
-                                 email=student_data.email)
+                                 email=student_data.email,
+                                 course_id=student_data.course_id)
     db.add(student)
     db.flush()
-    db.commit()
-    db.refresh(student)
-    
         
-    enrollment = OCMSmodels.Enrollment(student_id=student.student_id)
+    enrollment = OCMSmodels.Enrollment(student_id=student.student_id, course_id=student.course_id)
     db.add(enrollment)
     db.commit()
-    db.refresh(enrollment)
+        
     return {
-        "student_id": student.student_id,
         "enrollment_id": enrollment.enrollment_id,
         "enrollment_date": enrollment.enrollment_date
-    }
-@app.get("/OCMS/E/{student_id}")
+        }
+    
+@app.get("/OCMS/E/{student_id}", response_model=Enrollment_Create)
 def get_enrollment(student_id: int, db: Session = Depends(get_db)):
-    enrollment = db.query(enrollment).filter_by(student_id=student_id).first()
+    enrollment = db.query(Enrollment).filter_by(student_id=student_id).first()
 
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
