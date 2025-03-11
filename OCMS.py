@@ -41,26 +41,21 @@ class Enrollment_Create(BaseModel):
     enrollment_id:int
     enrollment_date:datetime
 
-@app.get("/OCMS/C")
+@app.get("/courses/all")
 def get_course(db: Session = Depends(get_db)):
     return db.query(OCMSmodels.Course).all()
 
 
-@app.get("/OCMS/I")
+@app.get("/instructors")
 def get_instructor(db: Session = Depends(get_db)):
     return db.query(OCMSmodels.Instructor).all()
 
 
-@app.get("/OCMS/S")
+@app.get("/students/all")
 def get_student(db: Session = Depends(get_db)):
     return db.query(OCMSmodels.Student).all()
 
-
-@app.get("/OCMS/E")
-def get_enrollment(db: Session = Depends(get_db)):
-    return db.query(OCMSmodels.Enrollment).all()
-
-@app.post("/OCMS/C")
+@app.post("/create/courses")
 def create_course(course_data:Course_Create,db: Session = Depends(get_db)):
     course = OCMSmodels.Course(course_id=course_data.course_id,
                                  title=course_data.title,
@@ -71,7 +66,7 @@ def create_course(course_data:Course_Create,db: Session = Depends(get_db)):
     db.refresh(course)
     return course
 
-@app.post("/OCMS/I")
+@app.post("/instructors/register")
 def create_instructor(instructor_data:Instructor_Create,db: Session = Depends(get_db)):
     instructor = OCMSmodels.Instructor(instructor_id=instructor_data.instructor_id,
                                  name=instructor_data.name,
@@ -82,7 +77,7 @@ def create_instructor(instructor_data:Instructor_Create,db: Session = Depends(ge
     db.refresh(instructor)
     return instructor
 
-@app.post("/OCMS/S", response_model=Enrollment_Create)
+@app.post("/students/joining", response_model=Enrollment_Create)
 def create_student(student_data:Student_Create,db: Session = Depends(get_db)):
     student = OCMSmodels.Student(student_id=student_data.student_id,
                                  name=student_data.name,
@@ -101,7 +96,7 @@ def create_student(student_data:Student_Create,db: Session = Depends(get_db)):
         "enrollment_date": enrollment.enrollment_date
         }
     
-@app.get("/OCMS/E/{student_id}", response_model=Enrollment_Create)
+@app.get("/enrollments/{student_id}", response_model=Enrollment_Create)
 def get_enrollment(student_id: int, db: Session = Depends(get_db)):
     enrollment = db.query(Enrollment).filter_by(student_id=student_id).first()
 
@@ -112,6 +107,3 @@ def get_enrollment(student_id: int, db: Session = Depends(get_db)):
         "enrollment_id": enrollment.enrollment_id,
         "enrollment_date": enrollment.enrollment_date
     }
-
-
-
