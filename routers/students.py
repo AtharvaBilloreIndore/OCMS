@@ -11,17 +11,17 @@ def get_students(db: Session = Depends(get_db)):
 
 @router.post("/joining",response_model=Enrollment_Create, summary="Register student")
 def create_student(student_data:Student_Create,db: Session = Depends(get_db)):
-    student = Student(student_id=student_data.student_id,
-                                 name=student_data.name,
-                                 education=student_data.education,
-                                 email=student_data.email,
-                                 course_id=student_data.course_id)
-    db.add(student)
-    db.flush()
+    with db.begin():
+        student = Student(student_id=student_data.student_id,
+                             name=student_data.name,
+                             education=student_data.education,
+                             email=student_data.email,
+                             course_id=student_data.course_id)
+        db.add(student)
+        db.flush()
         
-    enrollment = Enrollment(student_id=student.student_id, course_id=student.course_id)
-    db.add(enrollment)
-    db.commit()
+        enrollment = Enrollment(student_id=student.student_id, course_id=student.course_id)
+        db.add(enrollment)
         
     return {
         "enrollment_id": enrollment.enrollment_id,

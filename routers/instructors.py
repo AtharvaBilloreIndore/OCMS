@@ -28,10 +28,10 @@ def fetch_instructor(course_id: int, db: Session = Depends(get_db)):
 
 @router.post("/register", summary="Register instructor")
 def create_instructor(instructor_data:Instructor_Create,db: Session = Depends(get_db)):
-    instructor = Instructor(name=instructor_data.name,
+    with db.begin():
+        instructor = Instructor(name=instructor_data.name,
                                  email=instructor_data.email,
                                  expertise=instructor_data.expertise)
-    db.add(instructor)
-    db.commit()
-    db.refresh(instructor)
+        db.add(instructor)
+        db.refresh(instructor)
     return instructor
