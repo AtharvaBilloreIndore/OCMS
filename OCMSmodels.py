@@ -82,4 +82,3 @@ class Student_Create(BaseModel):
 class Enrollment_Create(BaseModel):
     enrollment_id:int
     enrollment_date:datetime
-
