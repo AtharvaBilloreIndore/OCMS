@@ -1,12 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from OCMSdb import get_db
-import OCMSmodels
-
+from fastapi import FastAPI
 import os
 from dotenv import load_dotenv
-from datetime import datetime
 from routers import courses, instructors, students, enrollments
 
 app = FastAPI()
