@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from OCMSdb import get_db
-from OCMSmodels import Student, Student_Create, Enrollment, Enrollment_Create
+from OCMSmodels import Student, Student_Create,Student_Update, Enrollment, Enrollment_Create
 
 router = APIRouter()
 
@@ -9,21 +9,43 @@ router = APIRouter()
 def get_students(db: Session = Depends(get_db)):
     return db.query(Student).all()
 
-@router.post("/joining",response_model=Enrollment_Create, summary="Register student")
+@router.post("", summary="Register student")
 def create_student(student_data:Student_Create,db: Session = Depends(get_db)):
     with db.begin():
-        student = Student(student_id=student_data.student_id,
-                             name=student_data.name,
-                             education=student_data.education,
-                             email=student_data.email,
-                             course_id=student_data.course_id)
+        student = Student( name=student_data.name,
+                           education=student_data.education,
+                           email=student_data.email)
         db.add(student)
-        db.flush()
-        
-        enrollment = Enrollment(student_id=student.student_id, course_id=student.course_id)
-        db.add(enrollment)
-        
+        db.flush() 
     return {
-        "enrollment_id": enrollment.enrollment_id,
-        "enrollment_date": enrollment.enrollment_date
-        }
+        "student_id": student.student_id,
+        "name": student.name }
+
+@router.patch("/{student_id}", summary= "Update Information")
+def update_student(student_id:int,student_data:Student_Update,db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.student_id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    update_data = student_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(student, key, value)
+    
+    db.commit()
+    db.refresh(student)
+    return student 
+
+@router.delete("/{student_id}")
+def delete_student(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.student_id == student_id, Student.is_deleted == False).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    student.is_deleted =True
+    
+    enrollments = db.query(Enrollment).filter(Enrollment.student_id == student_id)
+    for enrollment in enrollments:
+        enrollment.is_deleted = True
+    
+    db.commit()
+    return {"message": "Student soft-deleted successfully"}
