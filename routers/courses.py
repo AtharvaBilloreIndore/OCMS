@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from OCMSdb import get_db
-from OCMSmodels import Course,Course_Create,Instructor,Reference,Student,Enrollment
-
+from OCMSmodels import Course,Instructor,Reference,Student,Enrollment
+from schemas import Course_Create
+from fastapi.responses import JSONResponse
 router = APIRouter()
 
 @router.get("", summary="List all courses")
@@ -21,7 +22,6 @@ def create_course(course_data: Course_Create, db: Session = Depends(get_db)):
             missing_instructors = set(course_data.instructor_ids) - existing_instructor_ids
             if missing_instructors:
                 raise HTTPException(status_code=400, detail=f"Instructors {missing_instructors} not found")
-
             
             course = Course(title=course_data.title, description=course_data.description)
             db.add(course)
@@ -38,6 +38,14 @@ def create_course(course_data: Course_Create, db: Session = Depends(get_db)):
         }
     except IntegrityError: 
         raise HTTPException(status_code=500, detail="Database error: Failed to create course or instructor references")
+    
+    except Exception as e:
+        return JSONResponse(
+        status_code=500,
+        content={
+                "message":"Unexpected error occured"
+            }
+    )
 
 @router.put("/{course_id}")
 def update_course(course_id:int, course_data:Course_Create, db: Session = Depends(get_db)):
@@ -48,7 +56,6 @@ def update_course(course_id:int, course_data:Course_Create, db: Session = Depend
     course.title = course_data.title
     course.description = course_data.description
     db.commit()
-    db.refresh(course)
     return {
         "message": "Course updated successfully",
         "course": {

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from OCMSdb import get_db
-from OCMSmodels import Student, Student_Create,Student_Update, Enrollment, Enrollment_Create
-
+from OCMSmodels import Student, Enrollment, Enrollment_Create
+from schemas import Student_Create,Student_Update
 router = APIRouter()
 
 @router.get("", summary="List all students")
@@ -32,7 +32,6 @@ def update_student(student_id:int,student_data:Student_Update,db: Session = Depe
         setattr(student, key, value)
     
     db.commit()
-    db.refresh(student)
     return student 
 
 @router.delete("/{student_id}")
